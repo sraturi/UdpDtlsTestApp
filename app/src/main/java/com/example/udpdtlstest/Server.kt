@@ -1,14 +1,15 @@
 package com.example.udpdtlstest
 
-import com.example.udpdtlstest.dtls.DlsCrypto
 import com.example.udpdtlstest.dtls.DummyTlsServer
 import com.example.udpdtlstest.dtls.datagramTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.tls.DTLSServerProtocol
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.charset.Charset
+import java.security.SecureRandom
 import java.security.Security
 
 fun main() {
@@ -31,12 +32,13 @@ fun server() {
             receiveBuffer.get(receivedData)
             println("Server Received init request from: $receiveAddress, $receivedData")
 
-            //TODO the accept function takes in a third param called DTLSRequest,
+            // TODO the accept function takes in a third param called DTLSRequest,
             // need to figure out how to extract it.
             // Otherwise I think the problem is that Client has sent a handshake hello message but
             // server is not reading it so server is just waiting to receive it.
+
             val dtlsServer = dtlsProtocol.accept(
-                DummyTlsServer(DlsCrypto()),
+                DummyTlsServer(BcTlsCrypto(SecureRandom())),
                 datagramTransport(channel),
             )
             println("Server Sending back response")

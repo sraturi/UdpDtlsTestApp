@@ -1,14 +1,15 @@
 package com.example.udpdtlstest
 
-import com.example.udpdtlstest.dtls.DlsCrypto
 import com.example.udpdtlstest.dtls.DummyTlsClient
 import com.example.udpdtlstest.dtls.datagramTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.tls.DTLSClientProtocol
 import org.bouncycastle.tls.DTLSTransport
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
+import java.security.SecureRandom
 import java.security.Security
 
 fun main() {
@@ -25,7 +26,10 @@ fun sendClientMessage(msg: String): String {
 
     val socketAddress = InetSocketAddress("localhost", 8080)
     val transport: DTLSTransport = try {
-        dtlsClientProtocol.connect(DummyTlsClient(DlsCrypto()), datagramTransport(channel))
+        dtlsClientProtocol.connect(
+            DummyTlsClient(BcTlsCrypto(SecureRandom())),
+            datagramTransport(channel),
+        )
     } catch (e: Throwable) {
         e.printStackTrace()
         throw e
