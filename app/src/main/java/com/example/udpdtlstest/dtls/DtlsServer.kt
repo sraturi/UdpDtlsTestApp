@@ -1,27 +1,10 @@
 package com.example.udpdtlstest.dtls
 
 import org.bouncycastle.tls.AbstractTlsServer
-import org.bouncycastle.tls.Certificate
-import org.bouncycastle.tls.CertificateRequest
-import org.bouncycastle.tls.CertificateStatus
 import org.bouncycastle.tls.CipherSuite
-import org.bouncycastle.tls.NewSessionTicket
-import org.bouncycastle.tls.ProtocolVersion
 import org.bouncycastle.tls.TlsCloseable
 import org.bouncycastle.tls.TlsCredentials
-import org.bouncycastle.tls.TlsHeartbeat
-import org.bouncycastle.tls.TlsKeyExchangeFactory
-import org.bouncycastle.tls.TlsPSKExternal
-import org.bouncycastle.tls.TlsPSKIdentityManager
-import org.bouncycastle.tls.TlsSRPLoginParameters
-import org.bouncycastle.tls.TlsServer
-import org.bouncycastle.tls.TlsServerContext
-import org.bouncycastle.tls.TlsSession
 import org.bouncycastle.tls.crypto.TlsCrypto
-import org.bouncycastle.tls.crypto.TlsDHConfig
-import org.bouncycastle.tls.crypto.TlsECConfig
-import java.util.Hashtable
-import java.util.Vector
 
 class DummyTlsServer(tlsCrypto: TlsCrypto) : AbstractTlsServer(tlsCrypto) {
     val time = System.currentTimeMillis()

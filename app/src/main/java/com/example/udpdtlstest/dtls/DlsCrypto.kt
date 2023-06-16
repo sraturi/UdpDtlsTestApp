@@ -23,7 +23,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 import kotlin.experimental.xor
 
-class DtlsCryto : TlsCrypto {
+class DlsCrypto : TlsCrypto {
 
     private val random = SecureRandom()
     override fun hasAllRawSignatureAlgorithms(): Boolean {
@@ -205,4 +205,3 @@ class DtlsCryto : TlsCrypto {
         TODO("Not yet implemented")
     }
 }
-

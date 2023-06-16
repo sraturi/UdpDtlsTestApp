@@ -20,24 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.udpdtlstest.dtls.DtlsCryto
-import com.example.udpdtlstest.dtls.DummyTlsServer
 import com.example.udpdtlstest.ui.theme.UdpDtlsTestTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.tls.DTLSServerProtocol
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.nio.ByteBuffer
-import java.nio.channels.DatagramChannel
-import java.nio.charset.Charset
-import java.security.Security
-import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.random.Random
 
@@ -57,34 +43,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        Thread {
-            main()
+        // start server
+        val server = Thread {
+            logger.info("starting server!!!!!!")
+            server()
         }
-    }
-}
-suspend fun sendMessage(message: String): String {
-    val clientSocket = DatagramSocket()
-    try {
-        logger.info("created datagram socket")
-        val sendData = message.toByteArray()
-        val serverAddress = InetAddress.getByName("192.168.1.190")
-        val sendPacket = DatagramPacket(sendData, sendData.size, serverAddress, 8080)
-        logger.info("SENDING PACKET ")
-        clientSocket.send(sendPacket)
-        val receiveData = ByteArray(1024)
-        val receivePacket = DatagramPacket(receiveData, receiveData.size)
-        logger.info("Waiting to recieve packet")
-        withTimeout(5000) {
-            clientSocket.receive(receivePacket)
-        }
-        val receivedMessage = String(receivePacket.data, 0, receivePacket.length)
-        logger.info("Recieved packet: $receivedMessage")
-        clientSocket.close()
-        return receivedMessage
-    } catch (e: Exception) {
-        logger.log(Level.SEVERE, e.message, e)
-        clientSocket.close()
-        return e.message!!
+        server.start()
     }
 }
 
@@ -107,10 +71,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             overflow = TextOverflow.Visible,
         )
         Button(onClick = {
-            text = "abc"
-            GlobalScope.launch(Dispatchers.IO) {
-                text = clientMessage("Hello ${Random.nextInt()}")
+            val thread = Thread {
+                text = sendClientMessage("Hello ${Random.nextInt()}")
             }
+            thread.start()
+            thread.join()
         }) {
             Text(text = "Click to send")
         }
@@ -122,61 +87,5 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 fun GreetingPreview() {
     UdpDtlsTestTheme {
         Greeting("Android")
-    }
-}
-
-// fun main() {
-//    val PORT = 8080
-//    val bufferSize = 1024
-//    val receiveData = ByteArray(bufferSize)
-//
-//    try {
-//        val serverSocket = DatagramSocket(PORT)
-//        println("UDP Server is running on port $PORT")
-//
-//        while (true) {
-//            val receivePacket = DatagramPacket(receiveData, receiveData.size)
-//            serverSocket.receive(receivePacket)
-//
-//            val clientMessage = String(receivePacket.data, 0, receivePacket.length)
-//            println("Received from client: $clientMessage")
-//
-//            val responseMessage = "Server received: $clientMessage"
-//            val sendData = responseMessage.toByteArray()
-//
-//            val sendPacket = DatagramPacket(sendData, sendData.size, receivePacket.address, receivePacket.port)
-//            serverSocket.send(sendPacket)
-//        }
-//    } catch (e: Exception) {
-//        e.printStackTrace()
-//    }
-// }
-
-fun main() {
-    Security.addProvider(BouncyCastleProvider())
-
-    val channel = DatagramChannel.open()
-    channel.socket().bind(InetSocketAddress(8080))
-    println("UDP channel is created and bound to port 8080")
-    val dtlsProtocol = DTLSServerProtocol()
-
-    while (true) {
-        try {
-            val receiveBuffer = ByteBuffer.allocate(1024)
-            val receiveAddress = channel.receive(receiveBuffer)
-            receiveBuffer.flip()
-            val receivedData = ByteArray(receiveBuffer.remaining())
-            receiveBuffer.get(receivedData)
-            println("Received init request from: $receiveAddress, $receivedData")
-
-            val dtlsServer = dtlsProtocol.accept(
-                DummyTlsServer(DtlsCryto()),
-                datagramTransport(channel),
-            )
-            println("Sending back response")
-            dtlsServer.send("Hellosss".toByteArray(Charset.defaultCharset()), 0, 20)
-        } catch (th: Throwable) {
-            throw th
-        }
     }
 }

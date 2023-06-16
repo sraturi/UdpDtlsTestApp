@@ -37,11 +37,11 @@ class DummyTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
 
     override fun notifyCloseHandle(closeHandle: TlsCloseable?) {
         super.notifyCloseHandle(closeHandle)
-        println("notify close handle ${System.currentTimeMillis() - time}")
+        println("Client notify close handle ${System.currentTimeMillis() - time}")
     }
 
     override fun notifyHandshakeBeginning() {
         super.notifyHandshakeBeginning()
-        println("notify handshake beginning ${System.currentTimeMillis() - time}")
+        println("Client notify handshake beginning ${System.currentTimeMillis() - time}")
     }
 }
