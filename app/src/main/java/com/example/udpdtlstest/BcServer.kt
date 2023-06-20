@@ -11,30 +11,29 @@ import org.bouncycastle.tls.TlsFatalAlert
 import org.bouncycastle.tls.UDPTransport
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.net.DatagramPacket
-import java.net.DatagramSocket
+import java.net.InetSocketAddress
 import java.net.SocketTimeoutException
+import java.nio.channels.DatagramChannel
 import java.security.SecureRandom
 
 fun main() {
-    val port = 8080
     val mtu = 1500
     val serverCrypto = BcTlsCrypto(SecureRandom())
-
-    val socket = DatagramSocket(port)
+    val channel = DatagramChannel.open()
     val packet = DatagramPacket(ByteArray(mtu), mtu)
-
-    val initialDTLSRequest = waitForConnection(socket, packet, serverCrypto, mtu)
+    channel.bind(InetSocketAddress(8080))
+    val initialDTLSRequest = waitForConnection(channel, packet, serverCrypto, mtu)
 
     println("Accepting connection from ${packet.address.hostAddress}:${packet.port}")
-    socket.connect(packet.address, packet.port)
+    channel.connect(packet.socketAddress)
 
-    val transport: DatagramTransport = UDPTransport(socket, mtu)
+    val transport: DatagramTransport = UDPTransport(channel.socket(), mtu)
     val server = BumpDtlsServer(serverCrypto)
     val serverProtocol = DTLSServerProtocol()
     val dtlsServer = serverProtocol.accept(server, transport, initialDTLSRequest)
 
     val buf = ByteArray(dtlsServer.receiveLimit)
-    while (!socket.isClosed) {
+    while (!channel.socket().isClosed) {
         try {
             println("Waiting to receive!")
             val length = dtlsServer.receive(buf, 0, buf.size, 60000)
@@ -49,7 +48,7 @@ fun main() {
 }
 
 private fun waitForConnection(
-    socket: DatagramSocket,
+    channel: DatagramChannel,
     packet: DatagramPacket,
     serverCrypto: BcTlsCrypto,
     mtu: Int,
@@ -57,7 +56,7 @@ private fun waitForConnection(
     var dtlsRequest: DTLSRequest? = null
     val verifier = DTLSVerifier(serverCrypto)
     while (dtlsRequest == null) {
-        socket.receive(packet)
+        channel.socket().receive(packet)
         dtlsRequest = verifier.verifyRequest(
             packet.address.address,
             packet.data,
@@ -70,7 +69,7 @@ private fun waitForConnection(
                     if (len > sendLimit) {
                         throw TlsFatalAlert(AlertDescription.internal_error)
                     }
-                    socket.send(DatagramPacket(buf, off, len, packet.address, packet.port))
+                    channel.socket().send(DatagramPacket(buf, off, len, packet.address, packet.port))
                 }
             },
         )
