@@ -1,5 +1,6 @@
 package com.example.udpdtlstest
 
+import android.content.res.Resources
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.udpdtlstest.ui.theme.UdpDtlsTestTheme
@@ -35,22 +37,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    Greeting("Android")
+                    Greeting("Android", resources)
                 }
             }
         }
-
-        // start server
-        val server = Thread {
-            logger.info("starting server!!!!!!")
-            server()
-        }
-        server.start()
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Greeting(name: String, resources: Resources, modifier: Modifier = Modifier) {
     var text by remember {
         mutableStateOf("Click to send")
     }
@@ -68,11 +63,23 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             overflow = TextOverflow.Visible,
         )
         Button(onClick = {
-            val thread = Thread {
-                text = sendClientMessage("Hello ${Random.nextInt()}")
+            // start server
+            val server = Thread {
+                logger.info("starting server!!!!!!")
+                server(resources)
             }
-            thread.start()
-            thread.join()
+            server.start()
+
+            val client = Thread {
+                text = sendClientMessage(
+                    "Hello ${Random.nextInt()}",
+                    // set this to true, we should get bunch of gibberish
+                    testWithoutEncrypt = false,
+                    resources,
+                )
+            }
+            client.start()
+            client.join()
         }) {
             Text(text = "Click to send")
         }
@@ -83,6 +90,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     UdpDtlsTestTheme {
-        Greeting("Android")
+        Greeting("Android", LocalContext.current.resources)
     }
 }

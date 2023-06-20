@@ -1,5 +1,7 @@
 package com.example.udpdtlstest
 
+import KeysUtils
+import android.content.res.Resources
 import com.example.udpdtlstest.dtls.BumpTlsClient
 import com.example.udpdtlstest.dtls.DatagramChanelTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -16,7 +18,7 @@ import java.security.Security
 fun main() {
     sendClientMessage("Hello!")
 }
-fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false): String {
+fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false, resource: Resources? = null): String {
     Security.addProvider(BouncyCastleProvider())
 
     val channel = DatagramChannel.open()
@@ -28,7 +30,7 @@ fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false): String 
     val dtlsTransport: DTLSTransport = try {
         val dtlsClientProtocol = DTLSClientProtocol()
         println("client created dtls protocol")
-        dtlsClientProtocol.connect(BumpTlsClient(BcTlsCrypto(SecureRandom())), DatagramChanelTransport(channel, socketAddress))
+        dtlsClientProtocol.connect(BumpTlsClient(BcTlsCrypto(SecureRandom()), KeysUtils(resource)), DatagramChanelTransport(channel, socketAddress))
     } catch (e: Throwable) {
         e.printStackTrace()
         throw e

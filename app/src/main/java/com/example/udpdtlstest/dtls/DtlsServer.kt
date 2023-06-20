@@ -16,7 +16,7 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.util.Hashtable
 import java.util.Vector
 
-class BumpDtlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCrypto) {
+class BumpDtlsServer(bcCrypto: BcTlsCrypto,private val utils: KeysUtils) : DefaultTlsServer(bcCrypto) {
     val time = System.currentTimeMillis()
     override fun getSupportedCipherSuites(): IntArray {
         return intArrayOf(
@@ -71,7 +71,6 @@ class BumpDtlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCry
     override fun getRSASignerCredentials(): TlsCredentialedSigner {
         println("Server is in get rsa signer creds")
         val clientSigAlgs = context.securityParametersHandshake.clientSigAlgs
-        val utils = KeysUtils()
         return utils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.rsa)
     }
 

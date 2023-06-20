@@ -14,7 +14,7 @@ import org.bouncycastle.tls.TlsServerCertificate
 import org.bouncycastle.tls.TlsSession
 import org.bouncycastle.tls.crypto.TlsCrypto
 
-class BumpTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
+class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsClient(tlsCrypto) {
     val time = System.currentTimeMillis()
     lateinit var session: TlsSession
     override fun getSupportedCipherSuites(): IntArray {
@@ -45,11 +45,11 @@ class BumpTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
             }
 
             override fun getClientCredentials(certificateRequest: CertificateRequest): TlsCredentials {
+                println("Client in get client credentials")
                 val certTypes = certificateRequest.certificateTypes
                 if (!certTypes.contains(ClientCertificateType.rsa_sign)) {
                     error("no client cert type for rsa ")
                 }
-                val utils = KeysUtils()
                 return utils.loadSignerCredentials(
                     context,
                     certificateRequest.supportedSignatureAlgorithms,

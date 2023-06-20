@@ -1,5 +1,7 @@
 package com.example.udpdtlstest
 
+import KeysUtils
+import android.content.res.Resources
 import com.example.udpdtlstest.dtls.BumpDtlsServer
 import com.example.udpdtlstest.dtls.DatagramChanelTransport
 import org.bouncycastle.tls.DTLSRequest
@@ -16,38 +18,44 @@ import java.security.SecureRandom
 fun main() {
     server()
 }
-fun server() {
-    val mtu = 1500
-    val serverCrypto = BcTlsCrypto(SecureRandom())
-    val channel = DatagramChannel.open()
-    channel.bind(InetSocketAddress(8080))
 
-    val (initialDTLSRequest, address) = waitForConnection(channel, serverCrypto, mtu)
+// this is to open files when running android
+fun server(activityResource: Resources? = null) {
+    try {
+        val mtu = 1500
+        val serverCrypto = BcTlsCrypto(SecureRandom())
+        val channel = DatagramChannel.open()
+        channel.bind(InetSocketAddress(8080))
 
-    println("Accepting connection from ${address.address.hostAddress}:${address.port}")
-    channel.connect(address)
+        val (initialDTLSRequest, address) = waitForConnection(channel, serverCrypto, mtu)
 
-    val transport: DatagramTransport = DatagramChanelTransport(channel, address)
-    val server = BumpDtlsServer(serverCrypto)
-    val serverProtocol = DTLSServerProtocol()
-    val dtlsServer = serverProtocol.accept(server, transport, initialDTLSRequest)
+        println("Accepting connection from ${address.address.hostAddress}:${address.port}")
+        channel.connect(address)
 
-    val buf = ByteArray(dtlsServer.receiveLimit)
-    while (!channel.socket().isClosed) {
-        try {
-            println("Waiting to receive!")
-            val length = dtlsServer.receive(buf, 0, buf.size, 5000)
-            if (length >= 0) {
-                val msg = String(buf, 0,length)
-                println("Received from client: ${String(buf, 0,length)}")
-                val newMsg = "Server received: $msg".toByteArray()
-                dtlsServer.send(newMsg, 0, newMsg.size)
+        val transport: DatagramTransport = DatagramChanelTransport(channel, address)
+        val server = BumpDtlsServer(serverCrypto, KeysUtils(activityResource))
+        val serverProtocol = DTLSServerProtocol()
+        val dtlsServer = serverProtocol.accept(server, transport, initialDTLSRequest)
+
+        val buf = ByteArray(dtlsServer.receiveLimit)
+        while (!channel.socket().isClosed) {
+            try {
+                println("Waiting to receive!")
+                val length = dtlsServer.receive(buf, 0, buf.size, 5000)
+                if (length >= 0) {
+                    val msg = String(buf, 0, length)
+                    println("Received from client: ${String(buf, 0, length)}")
+                    val newMsg = "Server received: $msg".toByteArray()
+                    dtlsServer.send(newMsg, 0, newMsg.size)
+                }
+            } catch (th: Throwable) {
+                throw th
             }
-        } catch (th: Throwable) {
-            throw th
         }
+        dtlsServer.close()
+    } catch (th: Throwable) {
+        th.printStackTrace()
     }
-    dtlsServer.close()
 }
 
 private fun waitForConnection(
@@ -66,7 +74,7 @@ private fun waitForConnection(
         buffer.flip()
         val data = ByteArray(buffer.remaining())
         buffer.get(data)
-        println("Server received initial request from address: ${address} port:${address.port} data: ${data.map { it.toInt() }}")
+        println("Server received initial request from address: $address port:${address.port} data: ${data.map { it.toInt() }}")
         dtlsRequest = verifier.verifyRequest(
             address.address.address,
             data,

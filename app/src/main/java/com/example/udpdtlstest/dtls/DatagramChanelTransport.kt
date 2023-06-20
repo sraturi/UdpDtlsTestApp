@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 
-class DatagramChanelTransport(private val channel: DatagramChannel, val address: InetSocketAddress) : DatagramTransport {
+class DatagramChanelTransport(private val channel: DatagramChannel, private val address: InetSocketAddress) : DatagramTransport {
     override fun getReceiveLimit(): Int {
         return channel.socket().receiveBufferSize
     }

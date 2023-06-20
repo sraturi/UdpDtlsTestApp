@@ -1,4 +1,6 @@
 
+import android.content.res.Resources
+import com.example.udpdtlstest.R
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey
 import org.bouncycastle.asn1.sec.ECPrivateKey
@@ -45,7 +47,7 @@ import java.util.Hashtable
 import java.util.Vector
 
 // bunch of util methods copied from bouncy castle lib
-class KeysUtils() {
+class KeysUtils(val appResource: Resources?) {
 
     fun getResourceName(signatureAlgorithm: Short): String {
         return when (signatureAlgorithm) {
@@ -72,7 +74,7 @@ class KeysUtils() {
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
         if (crypto is BcTlsCrypto) {
-            val privateKey = loadBcPrivateKeyResource(keyResource)
+            val privateKey = loadBcPrivateKeyResource(keyResource!!)
             return BcDefaultTlsCredentialedSigner(
                 cryptoParams,
                 crypto,
@@ -163,7 +165,7 @@ class KeysUtils() {
         if (TlsUtils.isTLSv13(protocolVersion)) {
             val certificateEntryList = arrayOfNulls<CertificateEntry>(resources.size)
             for (i in resources.indices) {
-                val certificate = loadCertificateResource(crypto, resources[i])
+                val certificate = loadCertificateResource(crypto, resources[i]!!)
 
                 // TODO[tls13] Add possibility of specifying e.g. CertificateStatus
                 val extensions: Hashtable<*, *>? = null
@@ -176,13 +178,13 @@ class KeysUtils() {
         } else {
             val chain = arrayOfNulls<TlsCertificate>(resources.size)
             for (i in resources.indices) {
-                chain[i] = loadCertificateResource(crypto, resources[i])
+                chain[i] = loadCertificateResource(crypto, resources[i]!!)
             }
             return org.bouncycastle.tls.Certificate(chain)
         }
     }
 
-    fun loadCertificateResource(crypto: TlsCrypto, resource: String?): TlsCertificate {
+    fun loadCertificateResource(crypto: TlsCrypto, resource: String): TlsCertificate {
         val pem = loadPemResource(resource)
         if (pem.type.endsWith("CERTIFICATE")) {
             return crypto.createCertificate(pem.content)
@@ -190,7 +192,7 @@ class KeysUtils() {
         throw IllegalArgumentException("'resource' doesn't specify a valid certificate")
     }
 
-    fun loadBcPrivateKeyResource(resource: String?): AsymmetricKeyParameter {
+    fun loadBcPrivateKeyResource(resource: String): AsymmetricKeyParameter {
         val pem = loadPemResource(resource)
         if ((pem.type == "PRIVATE KEY")) {
             return PrivateKeyFactory.createKey(pem.content)
@@ -221,9 +223,9 @@ class KeysUtils() {
         throw IllegalArgumentException("'resource' doesn't specify a valid private key")
     }
 
-    fun loadPemResource(resource: String?): PemObject {
+    fun loadPemResource(resource: String): PemObject {
         val s: InputStream =
-            FileInputStream("app/src/main/res/$resource")
+            appResource?.assets?.open(resource) ?: FileInputStream("app/src/main/assets/$resource")
         PemReader(InputStreamReader(s))
         val p = PemReader(InputStreamReader(s))
         val o = p.readPemObject()
