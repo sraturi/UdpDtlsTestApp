@@ -1,7 +1,7 @@
 package com.example.udpdtlstest
 
+import com.example.udpdtlstest.dtls.ClientDatagramTransport
 import com.example.udpdtlstest.dtls.DummyTlsClient
-import com.example.udpdtlstest.dtls.datagramTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.tls.DTLSClientProtocol
 import org.bouncycastle.tls.DTLSTransport
@@ -25,10 +25,13 @@ fun sendClientMessage(msg: String): String {
     println("client created dtls protocol")
 
     val socketAddress = InetSocketAddress("localhost", 8080)
+    channel.socket().connect(socketAddress)
+    val trans = ClientDatagramTransport(channel, 1500)
+
     val transport: DTLSTransport = try {
         dtlsClientProtocol.connect(
             DummyTlsClient(BcTlsCrypto(SecureRandom())),
-            datagramTransport(channel),
+            trans,
         )
     } catch (e: Throwable) {
         e.printStackTrace()

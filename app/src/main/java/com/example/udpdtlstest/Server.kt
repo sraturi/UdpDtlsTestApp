@@ -1,7 +1,7 @@
 package com.example.udpdtlstest
 
 import com.example.udpdtlstest.dtls.DummyTlsServer
-import com.example.udpdtlstest.dtls.datagramTransport
+import com.example.udpdtlstest.dtls.serverDatagramTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.tls.DTLSServerProtocol
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
@@ -19,10 +19,10 @@ fun server() {
     Security.addProvider(BouncyCastleProvider())
 
     val channel = DatagramChannel.open()
-    channel.socket().bind(InetSocketAddress(8080))
+    channel.bind(InetSocketAddress(8080))
     println("Server UDP channel is created and bound to port 8080")
     val dtlsProtocol = DTLSServerProtocol()
-
+    val crypto = BcTlsCrypto(SecureRandom())
     while (true) {
         try {
             val receiveBuffer = ByteBuffer.allocate(1024)
@@ -30,17 +30,12 @@ fun server() {
             receiveBuffer.flip()
             val receivedData = ByteArray(receiveBuffer.remaining())
             receiveBuffer.get(receivedData)
-            println("Server Received init request from: $receiveAddress, $receivedData")
+            println("Server Received init request from: $receiveAddress, ${receivedData.map { it.toInt() }}")
 
-            // TODO the accept function takes in a third param called DTLSRequest,
-            // need to figure out how to extract it.
-            // Otherwise I think the problem is that Client has sent a handshake hello message but
-            // server is not reading it so server is just waiting to receive it.
+            val server = DummyTlsServer(crypto)
+            val transport = serverDatagramTransport(channel)
 
-            val dtlsServer = dtlsProtocol.accept(
-                DummyTlsServer(BcTlsCrypto(SecureRandom())),
-                datagramTransport(channel),
-            )
+            val dtlsServer = dtlsProtocol.accept(server, transport)
             println("Server Sending back response")
             dtlsServer.send("Hello from server".toByteArray(Charset.defaultCharset()), 0, 20)
         } catch (th: Throwable) {

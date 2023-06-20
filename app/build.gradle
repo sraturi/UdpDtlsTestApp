@@ -65,5 +65,5 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
     implementation 'org.bouncycastle:bctls-jdk15on:1.70'
-
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
 }
