@@ -1,7 +1,7 @@
 package com.example.udpdtlstest
 
 import com.example.udpdtlstest.dtls.BumpTlsClient
-import com.example.udpdtlstest.dtls.BumpDatagramTransport
+import com.example.udpdtlstest.dtls.DatagramChanelTransport
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.tls.DTLSClientProtocol
 import org.bouncycastle.tls.DTLSTransport
@@ -28,7 +28,7 @@ fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false): String 
     val dtlsTransport: DTLSTransport = try {
         val dtlsClientProtocol = DTLSClientProtocol()
         println("client created dtls protocol")
-        dtlsClientProtocol.connect(BumpTlsClient(BcTlsCrypto(SecureRandom())), BumpDatagramTransport(channel, 1500))
+        dtlsClientProtocol.connect(BumpTlsClient(BcTlsCrypto(SecureRandom())), DatagramChanelTransport(channel, socketAddress))
     } catch (e: Throwable) {
         e.printStackTrace()
         throw e
@@ -52,9 +52,8 @@ fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false): String 
         return recvMsg
     } else {
         val dataArr = ByteArray(dtlsTransport.receiveLimit)
-        dtlsTransport.receive(dataArr, 0, dataArr.size, 500)
-        val recvMsg = dataArr.toString(Charset.defaultCharset())
-        // TODO this prints the message plus all extra bit of the array
+        val len = dtlsTransport.receive(dataArr, 0, dataArr.size, 5000)
+        val recvMsg = String(dataArr, 0, len)
         println("received from the server! : $recvMsg")
         dtlsTransport.close()
         channel.close()

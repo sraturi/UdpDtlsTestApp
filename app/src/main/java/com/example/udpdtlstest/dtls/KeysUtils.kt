@@ -33,7 +33,6 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import org.bouncycastle.util.io.pem.PemObject
 import org.bouncycastle.util.io.pem.PemReader
 import java.io.FileInputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.math.BigInteger
@@ -233,7 +232,6 @@ class KeysUtils() {
     }
 }
 
-
 val keyPair = RSAKeyPairGenerator().apply {
     init(RSAKeyGenerationParameters(BigInteger.valueOf(67889), SecureRandom(), 2048, 80))
 }.generateKeyPair()!!
@@ -259,4 +257,3 @@ fun generateCertificate(): X509Certificate? {
 
     return JcaX509CertificateConverter().getCertificate(holder)
 }
-

@@ -9,7 +9,6 @@ import org.bouncycastle.tls.ClientCertificateType
 import org.bouncycastle.tls.DefaultTlsServer
 import org.bouncycastle.tls.ProtocolVersion
 import org.bouncycastle.tls.SignatureAlgorithm
-import org.bouncycastle.tls.TlsCloseable
 import org.bouncycastle.tls.TlsCredentialedDecryptor
 import org.bouncycastle.tls.TlsCredentialedSigner
 import org.bouncycastle.tls.TlsUtils

@@ -1,83 +1,85 @@
 package com.example.udpdtlstest
 
-import com.example.udpdtlstest.dtls.BumpDatagramTransport
 import com.example.udpdtlstest.dtls.BumpDtlsServer
-import org.bouncycastle.jce.provider.BouncyCastleProvider
+import com.example.udpdtlstest.dtls.DatagramChanelTransport
 import org.bouncycastle.tls.DTLSRequest
 import org.bouncycastle.tls.DTLSServerProtocol
 import org.bouncycastle.tls.DTLSVerifier
 import org.bouncycastle.tls.DatagramSender
-import org.bouncycastle.tls.UDPTransport
-import org.bouncycastle.tls.crypto.TlsCrypto
+import org.bouncycastle.tls.DatagramTransport
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
-import java.net.DatagramPacket
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
-import java.nio.charset.Charset
 import java.security.SecureRandom
-import java.security.Security
 
 fun main() {
     server()
 }
 fun server() {
-    Security.addProvider(BouncyCastleProvider())
-
-    val channel = DatagramChannel.open()
-    val address = InetSocketAddress(8080)
-    println("Server UDP channel is created and bound to port 8080")
-    val crypto = BcTlsCrypto(SecureRandom())
     val mtu = 1500
+    val serverCrypto = BcTlsCrypto(SecureRandom())
+    val channel = DatagramChannel.open()
+    channel.bind(InetSocketAddress(8080))
 
-    val request = waitforRequest(channel, mtu, crypto, address)
+    val (initialDTLSRequest, address) = waitForConnection(channel, serverCrypto, mtu)
 
-    println("Accepting connection")
+    println("Accepting connection from ${address.address.hostAddress}:${address.port}")
     channel.connect(address)
-    val server = BumpDtlsServer(crypto)
-    val transport = BumpDatagramTransport(channel, mtu)
-    val dtlsProtocol = DTLSServerProtocol()
-    val dtlsServer = dtlsProtocol.accept(server, transport, request)
-    println("Connected to client")
+
+    val transport: DatagramTransport = DatagramChanelTransport(channel, address)
+    val server = BumpDtlsServer(serverCrypto)
+    val serverProtocol = DTLSServerProtocol()
+    val dtlsServer = serverProtocol.accept(server, transport, initialDTLSRequest)
+
+    val buf = ByteArray(dtlsServer.receiveLimit)
     while (!channel.socket().isClosed) {
         try {
-            val dataArr = ByteArray(1024)
-            dtlsServer.receive(dataArr, 0, dataArr.size, 5000)
-            val msg = dataArr.toString(Charset.defaultCharset())
-            println("Server recived mssg: $msg")
-            dtlsServer.send("Server Recieved: ${msg.trim()}".toByteArray(Charset.defaultCharset()), 0, 20)
+            println("Waiting to receive!")
+            val length = dtlsServer.receive(buf, 0, buf.size, 5000)
+            if (length >= 0) {
+                val msg = String(buf, 0,length)
+                println("Received from client: ${String(buf, 0,length)}")
+                val newMsg = "Server received: $msg".toByteArray()
+                dtlsServer.send(newMsg, 0, newMsg.size)
+            }
         } catch (th: Throwable) {
             throw th
         }
     }
+    dtlsServer.close()
 }
 
-fun waitforRequest(channel: DatagramChannel, mtu: Int, crypto: TlsCrypto, address: InetSocketAddress): DTLSRequest {
-    var request: DTLSRequest? = null
-    val data = ByteArray(mtu)
-    val packet = DatagramPacket(data, data.size)
-    channel.bind(address)
-    while (request == null) {
-        println("waiting for a connection recv")
-        channel.socket().receive(packet)
-        println("Server Received init request from: $address, ${packet.data.map { it.toInt() }}")
-        request = DTLSVerifier(crypto).verifyRequest(
-            packet.address.address,
-            packet.data,
+private fun waitForConnection(
+    channel: DatagramChannel,
+    serverCrypto: BcTlsCrypto,
+    mtu: Int,
+): Pair<DTLSRequest, InetSocketAddress> {
+    var dtlsRequest: DTLSRequest? = null
+    val verifier = DTLSVerifier(serverCrypto)
+    val buffer = ByteBuffer.allocate(1024)
+    var address: InetSocketAddress? = null
+    while (dtlsRequest == null) {
+        println("Server waiting for initial connection request")
+        buffer.clear()
+        address = channel.receive(buffer) as InetSocketAddress
+        buffer.flip()
+        val data = ByteArray(buffer.remaining())
+        buffer.get(data)
+        println("Server received initial request from address: ${address} port:${address.port} data: ${data.map { it.toInt() }}")
+        dtlsRequest = verifier.verifyRequest(
+            address.address.address,
+            data,
             0,
-            packet.data.size,
+            data.size,
             object : DatagramSender {
-                override fun getSendLimit(): Int {
-                    return mtu - 28
-                }
+                override fun getSendLimit(): Int = mtu - 28
 
                 override fun send(buf: ByteArray, off: Int, len: Int) {
-                    println("Trying to send via verify req")
-                    channel.socket().send(DatagramPacket(buf, off, len, packet.address, packet.port))
+                    channel.send(ByteBuffer.wrap(buf, off, len), address)
                 }
             },
         )
-        println("end while loop: $request")
     }
-    println("Init request finished!")
-    return request
+    return Pair(dtlsRequest, address!!)
 }
