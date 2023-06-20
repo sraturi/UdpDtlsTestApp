@@ -14,7 +14,7 @@ import org.bouncycastle.tls.TlsServerCertificate
 import org.bouncycastle.tls.TlsSession
 import org.bouncycastle.tls.crypto.TlsCrypto
 
-class DummyTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
+class BumpTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
     val time = System.currentTimeMillis()
     lateinit var session: TlsSession
     override fun getSupportedCipherSuites(): IntArray {
@@ -79,5 +79,9 @@ class DummyTlsClient(tlsCrypto: TlsCrypto) : AbstractTlsClient(tlsCrypto) {
                 this.session = session
             }
         }
+    }
+
+    override fun getProtocolVersions(): Array<ProtocolVersion> {
+        return ProtocolVersion.DTLSv12.only()
     }
 }

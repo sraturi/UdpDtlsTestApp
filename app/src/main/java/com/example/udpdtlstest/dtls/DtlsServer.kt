@@ -17,7 +17,7 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.util.Hashtable
 import java.util.Vector
 
-class DummyTlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCrypto) {
+class BumpDtlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCrypto) {
     val time = System.currentTimeMillis()
     override fun getSupportedCipherSuites(): IntArray {
         return intArrayOf(
@@ -30,29 +30,13 @@ class DummyTlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCry
         return arrayOf(ProtocolVersion.DTLSv12)
     }
 
-    // TODO this gets creds, trying to figure out how to use the rsa files
-//    override fun getCredentials(): TlsCredentials {
-//        println("I am in get credentials 1")
-//        return BcDefaultTlsCredentialedSigner(
-//            TlsCryptoParameters(this.context),
-//            bcCrypto,
-//            keyPair.private,
-//            Certificate(arrayOf(BcTlsCertificate(crypto as BcTlsCrypto, generateCertificate()!!.encoded))),
-//            SignatureAndHashAlgorithm.rsa_pss_pss_sha256,
-//        )
-//    }
-
     override fun notifyHandshakeBeginning() {
         super.notifyHandshakeBeginning()
-        println("Server notify handshake beginning ${System.currentTimeMillis() - time}")
-    }
-
-    override fun notifyCloseHandle(closeHandle: TlsCloseable?) {
-        super.notifyCloseHandle(closeHandle)
-        println("Server notify handle closed ${System.currentTimeMillis() - time}")
+        println("Server notify handshake beginning ${System.currentTimeMillis() }")
     }
 
     override fun getCertificateRequest(): CertificateRequest {
+        super.getCertificateRequest()
         println("Server in get certificate request")
         val certsType = shortArrayOf(
             ClientCertificateType.rsa_sign,
@@ -63,7 +47,7 @@ class DummyTlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCry
         } else {
             null
         }
-        val authorities = Vector(listOf(X500Name("CN= test test")))
+        val authorities = Vector(listOf(X500Name("CN=BouncyCastle TLS Test CA")))
         return CertificateRequest(certsType, serverSigAlgs, authorities)
     }
 
@@ -76,9 +60,7 @@ class DummyTlsServer(private val bcCrypto: BcTlsCrypto) : DefaultTlsServer(bcCry
         }
         chain.forEach {
             val entry = org.bouncycastle.asn1.x509.Certificate.getInstance(it.encoded)
-            println(" got fingerprint  ${entry.issuer}: ${entry.subjectPublicKeyInfo.algorithm}")
-        }
-        val trustedResources = arrayOf("x509-client-rsa_pss_256.pem").map {
+            println(" got fingerprint  ${entry.issuer}: ${entry.subjectPublicKeyInfo.algorithm.algorithm.id}")
         }
     }
 
