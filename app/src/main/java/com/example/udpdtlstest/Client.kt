@@ -9,13 +9,14 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
+import java.nio.charset.Charset
 import java.security.SecureRandom
 import java.security.Security
 
 fun main() {
     sendClientMessage("Hello!")
 }
-fun sendClientMessage(msg: String): String {
+fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false): String {
     Security.addProvider(BouncyCastleProvider())
 
     val channel = DatagramChannel.open()
@@ -24,11 +25,11 @@ fun sendClientMessage(msg: String): String {
     val dtlsClientProtocol = DTLSClientProtocol()
     println("client created dtls protocol")
 
-    val socketAddress = InetSocketAddress("localhost", 8080)
+    val socketAddress = InetSocketAddress(8080)
     channel.socket().connect(socketAddress)
     val trans = ClientDatagramTransport(channel, 1500)
-
-    val transport: DTLSTransport = try {
+    // this is how we communicate i.e send/recv
+    val dtlsTransport: DTLSTransport = try {
         dtlsClientProtocol.connect(
             DummyTlsClient(BcTlsCrypto(SecureRandom())),
             trans,
@@ -38,27 +39,30 @@ fun sendClientMessage(msg: String): String {
         throw e
     }
     println("client connected to server, sending data")
-
-    val buffer = ByteBuffer.wrap(msg.toByteArray())
-    channel.send(ByteBuffer.wrap(msg.toByteArray()), socketAddress)
+    // This should be encrypted!..............!
+    dtlsTransport.send(msg.toByteArray(), 0, msg.toByteArray().size)
 
     println("waiting to receive data on client")
-    buffer.clear()
-    val senderAddress = channel.receive(buffer)
-    buffer.flip()
-
-    val msg = if (senderAddress != null) {
-        val receivedData = ByteArray(buffer.remaining())
-        buffer.get(receivedData)
-        // Process or display the received data as needed
-        println("Received data: ${String(receivedData)}")
-        String(receivedData)
+    // if I recieve using channel, i get bunch of giberish
+    if (testWithoutEncrypt) {
+        val buff = ByteBuffer.allocate(1024)
+        channel.receive(buff)
+        buff.flip()
+        val data = ByteArray(buff.remaining())
+        buff.get(data)
+        val recvMsg = data.toString(Charset.defaultCharset())
+        println("Recieved from server using normal channell: $recvMsg")
+        dtlsTransport.close()
+        channel.close()
+        return recvMsg
     } else {
-        println("No data received")
-        "client No msg recieved"
+        val dataArr = ByteArray(dtlsTransport.receiveLimit)
+        dtlsTransport.receive(dataArr, 0, dataArr.size, 500)
+        val recvMsg = dataArr.toString(Charset.defaultCharset())
+        // TODO this prints the message plus all extra bit of the array
+        println("received from the server! : $recvMsg")
+        dtlsTransport.close()
+        channel.close()
+        return recvMsg
     }
-
-    transport.close()
-    channel.close()
-    return msg
 }
