@@ -16,7 +16,7 @@ import java.security.SecureRandom
 import java.security.Security
 
 fun main() {
-    sendClientMessage("Hello!")
+    sendClientMessage("Hello server!")
 }
 fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false, resource: Resources? = null): String {
     Security.addProvider(BouncyCastleProvider())

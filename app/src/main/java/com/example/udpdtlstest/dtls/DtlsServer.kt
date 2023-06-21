@@ -17,7 +17,6 @@ import java.util.Hashtable
 import java.util.Vector
 
 class BumpDtlsServer(bcCrypto: BcTlsCrypto,private val utils: KeysUtils) : DefaultTlsServer(bcCrypto) {
-    val time = System.currentTimeMillis()
     override fun getSupportedCipherSuites(): IntArray {
         return intArrayOf(
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,

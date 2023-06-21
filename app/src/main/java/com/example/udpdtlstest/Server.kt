@@ -22,12 +22,11 @@ fun main() {
 // this is to open files when running android
 fun server(activityResource: Resources? = null) {
     try {
-        val mtu = 1500
         val serverCrypto = BcTlsCrypto(SecureRandom())
         val channel = DatagramChannel.open()
         channel.bind(InetSocketAddress(8080))
 
-        val (initialDTLSRequest, address) = waitForConnection(channel, serverCrypto, mtu)
+        val (initialDTLSRequest, address) = waitForConnection(channel, serverCrypto)
 
         println("Accepting connection from ${address.address.hostAddress}:${address.port}")
         channel.connect(address)
@@ -60,8 +59,7 @@ fun server(activityResource: Resources? = null) {
 
 private fun waitForConnection(
     channel: DatagramChannel,
-    serverCrypto: BcTlsCrypto,
-    mtu: Int,
+    serverCrypto: BcTlsCrypto
 ): Pair<DTLSRequest, InetSocketAddress> {
     var dtlsRequest: DTLSRequest? = null
     val verifier = DTLSVerifier(serverCrypto)
@@ -81,7 +79,7 @@ private fun waitForConnection(
             0,
             data.size,
             object : DatagramSender {
-                override fun getSendLimit(): Int = mtu - 28
+                override fun getSendLimit(): Int = channel.socket().sendBufferSize
 
                 override fun send(buf: ByteArray, off: Int, len: Int) {
                     channel.send(ByteBuffer.wrap(buf, off, len), address)
