@@ -50,6 +50,7 @@ class BumpDtlsServer(bcCrypto: BcTlsCrypto,private val utils: KeysUtils) : Defau
     }
 
     override fun notifyClientCertificate(clientCertificate: Certificate) {
+        //TODO this is where we verify the certificate!!!!!!!
         println("Server in notify client certificate")
         val chain = clientCertificate.certificateList
         if (chain.isEmpty()) {
@@ -86,5 +87,15 @@ class BumpDtlsServer(bcCrypto: BcTlsCrypto,private val utils: KeysUtils) : Defau
     override fun getServerExtensionsForConnection(serverExtensions: Hashtable<*, *>?) {
         println("Server in getServerextensionForConnection")
         super.getServerExtensionsForConnection(serverExtensions)
+    }
+
+    override fun notifyHandshakeComplete() {
+        println("Server handshake finished!")
+        super.notifyHandshakeComplete()
+    }
+
+    override fun notifyClientVersion(clientVersion: ProtocolVersion) {
+        println("Client using protocol: ${clientVersion.name}")
+        super.notifyClientVersion(clientVersion)
     }
 }

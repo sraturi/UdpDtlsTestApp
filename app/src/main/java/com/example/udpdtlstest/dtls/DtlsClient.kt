@@ -13,6 +13,7 @@ import org.bouncycastle.tls.TlsCredentials
 import org.bouncycastle.tls.TlsServerCertificate
 import org.bouncycastle.tls.TlsSession
 import org.bouncycastle.tls.crypto.TlsCrypto
+import java.util.Vector
 
 class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsClient(tlsCrypto) {
     val time = System.currentTimeMillis()
@@ -32,6 +33,7 @@ class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsCli
         println("clinet inside get authentication")
         return object : TlsAuthentication {
             override fun notifyServerCertificate(serverCertificate: TlsServerCertificate) {
+                //TODO this is where we verify certificate
                 val chain = serverCertificate.certificate.certificateList
                 println("DTLS client got certificates ${chain.size}")
                 chain.forEach {
@@ -83,5 +85,13 @@ class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsCli
 
     override fun getProtocolVersions(): Array<ProtocolVersion> {
         return ProtocolVersion.DTLSv12.only()
+    }
+
+    override fun getTrustedCAIndication(): Vector<*> {
+        return super.getTrustedCAIndication()
+    }
+    override fun notifyServerVersion(serverVersion: ProtocolVersion) {
+        println("Server using version: ${serverVersion.name}")
+        super.notifyServerVersion(serverVersion)
     }
 }
