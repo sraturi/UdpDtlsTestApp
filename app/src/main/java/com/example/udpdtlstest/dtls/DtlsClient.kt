@@ -86,10 +86,6 @@ class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsCli
     override fun getProtocolVersions(): Array<ProtocolVersion> {
         return ProtocolVersion.DTLSv12.only()
     }
-
-    override fun getTrustedCAIndication(): Vector<*> {
-        return super.getTrustedCAIndication()
-    }
     override fun notifyServerVersion(serverVersion: ProtocolVersion) {
         println("Server using version: ${serverVersion.name}")
         super.notifyServerVersion(serverVersion)
