@@ -14,6 +14,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.security.SecureRandom
+import kotlin.random.Random
 
 fun main() {
     server()
@@ -44,7 +45,7 @@ fun server(activityResource: Resources? = null) {
                 if (length >= 0) {
                     val msg = String(buf, 0, length)
                     println("Received from client: ${String(buf, 0, length)}")
-                    val newMsg = "Server received: $msg".toByteArray()
+                    val newMsg = "Server received: $msg, ${Random.nextInt()}".toByteArray()
                     dtlsServer.send(newMsg, 0, newMsg.size)
                 }
             } catch (th: Throwable) {

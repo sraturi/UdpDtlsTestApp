@@ -2,10 +2,10 @@ package com.example.udpdtlstest.dtls
 
 import KeysUtils
 import org.bouncycastle.asn1.x509.Certificate
-import org.bouncycastle.tls.AbstractTlsClient
 import org.bouncycastle.tls.CertificateRequest
 import org.bouncycastle.tls.CipherSuite
 import org.bouncycastle.tls.ClientCertificateType
+import org.bouncycastle.tls.DefaultTlsClient
 import org.bouncycastle.tls.ProtocolVersion
 import org.bouncycastle.tls.SignatureAlgorithm
 import org.bouncycastle.tls.TlsAuthentication
@@ -13,9 +13,8 @@ import org.bouncycastle.tls.TlsCredentials
 import org.bouncycastle.tls.TlsServerCertificate
 import org.bouncycastle.tls.TlsSession
 import org.bouncycastle.tls.crypto.TlsCrypto
-import java.util.Vector
 
-class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsClient(tlsCrypto) {
+class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : DefaultTlsClient(tlsCrypto) {
     val time = System.currentTimeMillis()
     lateinit var session: TlsSession
     override fun getSupportedCipherSuites(): IntArray {
@@ -33,7 +32,7 @@ class BumpTlsClient(tlsCrypto: TlsCrypto, val utils: KeysUtils) : AbstractTlsCli
         println("clinet inside get authentication")
         return object : TlsAuthentication {
             override fun notifyServerCertificate(serverCertificate: TlsServerCertificate) {
-                //TODO this is where we verify certificate
+                // TODO this is where we verify certificate
                 val chain = serverCertificate.certificate.certificateList
                 println("DTLS client got certificates ${chain.size}")
                 chain.forEach {

@@ -36,29 +36,34 @@ fun sendClientMessage(msg: String, testWithoutEncrypt: Boolean = false, resource
         throw e
     }
     println("client connected to server, sending data")
-    // This should be encrypted!..............!
-    dtlsTransport.send(msg.toByteArray(), 0, msg.toByteArray().size)
 
-    println("waiting to receive data on client")
-    // if I recieve using channel, i get bunch of giberish
-    if (testWithoutEncrypt) {
-        val buff = ByteBuffer.allocate(1024)
-        channel.receive(buff)
-        buff.flip()
-        val data = ByteArray(buff.remaining())
-        buff.get(data)
-        val recvMsg = data.toString(Charset.defaultCharset())
-        println("Recieved from server using normal channell: $recvMsg")
-        dtlsTransport.close()
-        channel.close()
-        return recvMsg
-    } else {
-        val dataArr = ByteArray(dtlsTransport.receiveLimit)
-        val len = dtlsTransport.receive(dataArr, 0, dataArr.size, 5000)
-        val recvMsg = String(dataArr, 0, len)
-        println("received from the server! : $recvMsg")
-        dtlsTransport.close()
-        channel.close()
-        return recvMsg
+    while (true) {
+        // This should be encrypted!..............!
+        dtlsTransport.send(msg.toByteArray(), 0, msg.toByteArray().size)
+
+        println("waiting to receive data on client")
+        // if I recieve using channel, i get bunch of giberish
+        if (testWithoutEncrypt) {
+            val buff = ByteBuffer.allocate(1024)
+            channel.receive(buff)
+            buff.flip()
+            val data = ByteArray(buff.remaining())
+            buff.get(data)
+            val recvMsg = data.toString(Charset.defaultCharset())
+            println("Recieved from server using normal channell: $recvMsg")
+//            dtlsTransport.close()
+//            channel.close()
+//            return recvMsg
+        } else {
+            val dataArr = ByteArray(dtlsTransport.receiveLimit)
+            val len = dtlsTransport.receive(dataArr, 0, dataArr.size, 5000)
+            val recvMsg = String(dataArr, 0, len)
+            println("received from the server! : $recvMsg")
+//            dtlsTransport.close()
+//            channel.close()
+//            return recvMsg
+        }
+        Thread.sleep(4000)
     }
+    return ""
 }
