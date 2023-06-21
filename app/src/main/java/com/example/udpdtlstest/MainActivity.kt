@@ -6,11 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,13 +51,16 @@ fun Greeting(name: String, resources: Resources, modifier: Modifier = Modifier) 
     var text by remember {
         mutableStateOf("Click to send")
     }
+    var useWithoutEncrypt by remember {
+        mutableStateOf(false)
+    }
 
     Column(
         Modifier
             .fillMaxWidth(1f)
             .fillMaxSize(1f),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.SpaceEvenly,
     ) {
         Text(
             text = text,
@@ -74,7 +79,7 @@ fun Greeting(name: String, resources: Resources, modifier: Modifier = Modifier) 
                 text = sendClientMessage(
                     "Hello ${Random.nextInt()}",
                     // set this to true, we should get bunch of gibberish
-                    testWithoutEncrypt = false,
+                    testWithoutEncrypt = useWithoutEncrypt,
                     resources,
                 )
             }
@@ -82,6 +87,13 @@ fun Greeting(name: String, resources: Resources, modifier: Modifier = Modifier) 
             client.join()
         }) {
             Text(text = "Click to send")
+        }
+
+        Row (verticalAlignment = Alignment.CenterVertically){
+            Text(text = "Base channel to receive data?      ")
+            Switch(checked = useWithoutEncrypt, onCheckedChange = {
+                useWithoutEncrypt = it
+            })
         }
     }
 }
